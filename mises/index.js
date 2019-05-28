@@ -4,7 +4,7 @@ let app = new PIXI.Application({
 });
 document.body.appendChild(app.view);
 
-let img = new PIXI.Sprite.from('misess.jpg');
+let img = new PIXI.Sprite.from('mises.jpg');
 img.width = window.innerWidth;
 img.height = window.innerHeight;
 app.stage.addChild(img);
