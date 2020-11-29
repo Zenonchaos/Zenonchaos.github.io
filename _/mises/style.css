@@ -1,0 +1,11 @@
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  
+  cursor: url(pizza.png) auto !important;
+}
+
+canvas {
+  width: 100%;
+}

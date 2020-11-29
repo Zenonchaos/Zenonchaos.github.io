@@ -1,0 +1,6 @@
+# Don't allow web crawlers to index Craft CMS and my dev folder
+User-agent: *
+Disallow: /craft/
+Disallow: /dev/
+Allow: /
+Sitemap: https://www.alexcoven.com/sitemap_location.xml
