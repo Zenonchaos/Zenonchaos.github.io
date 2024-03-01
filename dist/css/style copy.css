@@ -2504,7 +2504,9 @@ a.button {
     max-width: 600px !important;
   }
 }
-
+.dribbble-slide {
+  padding-top: 20px;
+}
 .dribbble-section {
   max-width: 500px;
 }
