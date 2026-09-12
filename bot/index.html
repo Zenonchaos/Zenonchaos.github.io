@@ -1,132 +1,592 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mindmap</title>
 
-    <title>Magic Roles</title>
+<style>
+*{box-sizing:border-box}
 
-    <!-- Telegram Mini App -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+body{
+  margin:0;
+  overflow:hidden;
+  background:#0b1020;
+  color:#fff;
+  font-family:Arial,sans-serif;
+}
 
-    <link rel="stylesheet" href="style.css">
+#score{
+  position:fixed;
+  top:15px;
+  right:15px;
+  z-index:1000;
+  width:190px;
+  padding:14px;
+  border-radius:16px;
+  background:#1e293b;
+  border:1px solid #334155;
+  text-align:center;
+  box-shadow:0 8px 30px #0008;
+}
+
+.score-title{font-size:16px;font-weight:bold}
+#scoreValue{color:#fbbf24;font-size:22px}
+
+#addPoints{
+  width:100%;
+  margin-top:10px;
+  padding:11px;
+  border:0;
+  border-radius:10px;
+  background:#7c3aed;
+  color:#fff;
+  font-size:15px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+#pointsAnimation{
+  position:fixed;
+  top:100px;
+  right:45px;
+  z-index:1100;
+  pointer-events:none;
+  color:#fbbf24;
+  font-size:24px;
+  font-weight:bold;
+  opacity:0;
+}
+
+#pointsAnimation.show{
+  animation:points 1s ease forwards;
+}
+
+@keyframes points{
+  0%{opacity:0;transform:translateY(10px)}
+  20%{opacity:1}
+  100%{opacity:0;transform:translateY(-35px)}
+}
+
+#viewport{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  touch-action:none;
+  cursor:grab;
+}
+
+#viewport.dragging{cursor:grabbing}
+
+#map{
+  position:absolute;
+  width:1600px;
+  height:1000px;
+  transform-origin:0 0;
+}
+
+.node{
+  position:absolute;
+  width:150px;
+  min-height:90px;
+  padding:15px;
+  border-radius:18px;
+  background:#1e293b;
+  border:1px solid #334155;
+  text-align:center;
+  cursor:pointer;
+  user-select:none;
+  transform:translate(-50%,-50%);
+  transition:transform .15s,box-shadow .15s,border-color .15s;
+}
+
+.node:hover{
+  transform:translate(-50%,-50%) scale(1.05);
+}
+
+.node:active{
+  transform:translate(-50%,-50%) scale(.97);
+}
+
+.locked{opacity:.7}
+
+.unlocked{
+  border-color:#8b5cf6;
+  box-shadow:0 0 25px #8b5cf640;
+}
+
+.icon{font-size:30px}
+.title{margin-top:7px;font-weight:bold}
+
+.lock-text{
+  margin-top:5px;
+  font-size:12px;
+  color:#94a3b8;
+}
+
+.cost{
+  margin-top:8px;
+  font-size:13px;
+  color:#fbbf24;
+  font-weight:bold;
+}
+
+#popup{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:#000b;
+  z-index:2000;
+}
+
+#popup.show{display:flex}
+
+.popup-card{
+  width:100%;
+  max-width:380px;
+  padding:30px 22px;
+  border-radius:25px;
+  background:#1e293b;
+  text-align:center;
+  animation:popup .25s ease;
+  box-shadow:0 25px 80px #0009;
+}
+
+@keyframes popup{
+  from{opacity:0;transform:scale(.8)}
+  to{opacity:1;transform:scale(1)}
+}
+
+.popup-icon{font-size:55px}
+
+.secret{
+  margin-top:5px;
+  font-size:13px;
+  letter-spacing:3px;
+  color:#b794f4;
+  font-weight:bold;
+}
+
+.popup-title{
+  font-size:25px;
+  font-weight:bold;
+  margin:15px 0;
+}
+
+.popup-text{
+  color:#cbd5e1;
+  line-height:1.5;
+  margin-bottom:20px;
+}
+
+.popup-cost{
+  margin-bottom:20px;
+  font-size:16px;
+  color:#fbbf24;
+  font-weight:bold;
+}
+
+.popup-card button{
+  width:100%;
+  padding:15px;
+  border:0;
+  border-radius:13px;
+  background:#7c3aed;
+  color:#fff;
+  font-size:17px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.popup-card button:active{transform:scale(.97)}
+
+.popup-card .close{
+  margin-top:12px;
+  background:transparent;
+  color:#94a3b8;
+  font-size:14px;
+}
+
+.popup-card .close:hover{background:#334155}
+</style>
 </head>
 
 <body>
 
-<div class="stars"></div>
-
-<main class="app">
-
-    <header class="header">
-        <div class="magic-icon">🔮</div>
-
-        <h1>Magic Roles</h1>
-
-        <p>Тайна магических ролей</p>
-    </header>
-
-
-    <!-- Пользователь -->
-    <section class="user-card">
-
-        <div class="avatar" id="avatar">
-            ✨
-        </div>
-
-        <div class="user-info">
-            <span class="label">Твой персонаж</span>
-            <h2 id="username">Магический странник</h2>
-            <p id="currentRole">Роль ещё не выбрана</p>
-        </div>
-
-    </section>
-
-
-    <!-- Выбор роли -->
-    <section class="roles-section">
-
-        <h2 class="section-title">
-            ✨ Выбери свою роль
-        </h2>
-
-        <div class="roles">
-
-            <button class="role-card" data-role="Архимаг">
-                <span class="role-icon">🧙</span>
-                <span class="role-name">Архимаг</span>
-                <span class="role-description">
-                    Повелитель древней магии
-                </span>
-            </button>
-
-            <button class="role-card" data-role="Ведьма">
-                <span class="role-icon">🧹</span>
-                <span class="role-name">Ведьма</span>
-                <span class="role-description">
-                    Хранительница тайных заклинаний
-                </span>
-            </button>
-
-            <button class="role-card" data-role="Воин">
-                <span class="role-icon">⚔️</span>
-                <span class="role-name">Воин</span>
-                <span class="role-description">
-                    Защитник магического мира
-                </span>
-            </button>
-
-            <button class="role-card" data-role="Целитель">
-                <span class="role-icon">🌿</span>
-                <span class="role-name">Целитель</span>
-                <span class="role-description">
-                    Повелитель жизни и природы
-                </span>
-            </button>
-
-            <button class="role-card" data-role="Некромант">
-                <span class="role-icon">💀</span>
-                <span class="role-name">Некромант</span>
-                <span class="role-description">
-                    Повелитель тёмной магии
-                </span>
-            </button>
-
-            <button class="role-card" data-role="Друид">
-                <span class="role-icon">🌲</span>
-                <span class="role-name">Друид</span>
-                <span class="role-description">
-                    Хранитель сил природы
-                </span>
-            </button>
-
-        </div>
-
-    </section>
-
-
-    <!-- Участники -->
-    <section class="players-section">
-
-        <h2 class="section-title">
-            👥 Участники
-        </h2>
-
-        <div id="players"></div>
-
-    </section>
-
-</main>
-
-
-<!-- Уведомление -->
-<div id="notification" class="notification">
-    ✨ Роль выбрана!
+<div id="score">
+  <div class="score-title">
+    ⭐ Очки: <span id="scoreValue">0</span>
+  </div>
+  <button id="addPoints">+10 очков</button>
 </div>
 
+<div id="pointsAnimation">+10 ⭐</div>
 
-<script src="app.js"></script>
+<div id="viewport">
+  <div id="map">
+    <div id="nodes"></div>
+  </div>
+</div>
+
+<div id="popup">
+  <div class="popup-card">
+
+    <div class="popup-icon" id="popupIcon">🔒</div>
+
+    <div class="secret">ТАЙНОЕ ЗНАНИЕ</div>
+
+    <div class="popup-title" id="popupTitle"></div>
+
+    <div class="popup-text" id="popupText"></div>
+
+    <div class="popup-cost" id="popupCost"></div>
+
+    <button id="unlockButton">Открыть знание</button>
+
+    <button class="close" id="closeButton">
+      Закрыть
+    </button>
+
+  </div>
+</div>
+
+<script>
+
+const knowledge = [
+  {
+    id:1,
+    x:800,
+    y:500,
+    title:"Начало",
+    unlocked:true,
+    children:[2,3]
+  },
+  {
+    id:2,
+    x:550,
+    y:350,
+    title:"Первый шаг",
+    unlocked:false,
+    cost:20,
+    children:[4,5],
+    secret:"Большие изменения начинаются с маленького действия."
+  },
+  {
+    id:3,
+    x:1050,
+    y:350,
+    title:"Мышление",
+    unlocked:false,
+    cost:50,
+    children:[6],
+    secret:"Правильный вопрос иногда важнее правильного ответа."
+  },
+  {
+    id:4,
+    x:350,
+    y:200,
+    title:"Привычки",
+    unlocked:false,
+    cost:80,
+    children:[],
+    secret:"Маленькие действия, повторённые много раз, создают большой результат."
+  },
+  {
+    id:5,
+    x:650,
+    y:150,
+    title:"Дисциплина",
+    unlocked:false,
+    cost:120,
+    children:[],
+    secret:"Дисциплина помогает продолжать даже тогда, когда исчезает мотивация."
+  },
+  {
+    id:6,
+    x:1250,
+    y:200,
+    title:"Стратегия",
+    unlocked:false,
+    cost:200,
+    children:[],
+    secret:"Не каждое движение ведёт вперёд. Иногда важно сначала выбрать направление."
+  }
+];
+
+let score=Number(localStorage.getItem("mindmapScore"))||0;
+let selectedNode=null;
+
+let dragging=false;
+let moved=false;
+
+let startPointerX=0;
+let startPointerY=0;
+
+let startOffsetX=300;
+let startOffsetY=200;
+
+let offsetX=300;
+let offsetY=200;
+
+let scale=1;
+
+const viewport=document.getElementById("viewport");
+const map=document.getElementById("map");
+const nodes=document.getElementById("nodes");
+
+const popup=document.getElementById("popup");
+const popupIcon=document.getElementById("popupIcon");
+const popupTitle=document.getElementById("popupTitle");
+const popupText=document.getElementById("popupText");
+const popupCost=document.getElementById("popupCost");
+
+const unlockButton=document.getElementById("unlockButton");
+const closeButton=document.getElementById("closeButton");
+
+const scoreValue=document.getElementById("scoreValue");
+const addPointsButton=document.getElementById("addPoints");
+
+scoreValue.textContent=score;
+
+addPointsButton.addEventListener("click",e=>{
+  e.stopPropagation();
+
+  score+=10;
+
+  localStorage.setItem("mindmapScore",score);
+  scoreValue.textContent=score;
+
+  const el=document.getElementById("pointsAnimation");
+
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+});
+
+function render(){
+
+  nodes.innerHTML="";
+
+  knowledge.forEach(node=>{
+
+    const element=document.createElement("div");
+
+    element.className=
+      "node "+(node.unlocked?"unlocked":"locked");
+
+    element.style.left=node.x+"px";
+    element.style.top=node.y+"px";
+
+    element.innerHTML=node.unlocked
+      ? `
+        <div class="icon">✨</div>
+        <div class="title">${node.title}</div>
+      `
+      : `
+        <div class="icon">🔒</div>
+        <div class="title">Тайное знание</div>
+        <div class="lock-text">Нажми, чтобы открыть</div>
+        <div class="cost">⭐ ${node.cost} очков</div>
+      `;
+
+    element.addEventListener("pointerup",e=>{
+
+      if(moved)return;
+
+      e.stopPropagation();
+
+      selectedNode=node;
+      showPopup(node);
+
+    });
+
+    nodes.appendChild(element);
+  });
+}
+
+function showPopup(node){
+
+  selectedNode=node;
+
+  if(node.unlocked){
+
+    popupIcon.textContent="✨";
+    popupTitle.textContent=node.title;
+    popupText.textContent=node.secret||"Это знание уже открыто.";
+    popupCost.textContent="";
+
+    unlockButton.style.display="none";
+
+  }else{
+
+    popupIcon.textContent="🔒";
+    popupTitle.textContent="Тайное знание";
+
+    popupText.textContent=
+      "Это знание пока скрыто. Чтобы открыть его, необходимо накопить нужное количество очков.";
+
+    popupCost.textContent=
+      `⭐ Стоимость: ${node.cost} очков`;
+
+    unlockButton.style.display="block";
+
+    if(score>=node.cost){
+
+      unlockButton.disabled=false;
+      unlockButton.textContent=`Открыть за ${node.cost} ⭐`;
+
+    }else{
+
+      unlockButton.disabled=true;
+      unlockButton.textContent=
+        `Нужно ещё ${node.cost-score} ⭐`;
+
+    }
+  }
+
+  popup.classList.add("show");
+}
+
+unlockButton.addEventListener("click",e=>{
+
+  e.stopPropagation();
+
+  if(!selectedNode)return;
+
+  const cost=selectedNode.cost||0;
+
+  if(score<cost){
+
+    const missing=cost-score;
+
+    popupCost.textContent=`❌ Не хватает ${missing} очков`;
+    unlockButton.textContent=`Нужно ещё ${missing} ⭐`;
+
+    return;
+  }
+
+  score-=cost;
+
+  localStorage.setItem("mindmapScore",score);
+  scoreValue.textContent=score;
+
+  selectedNode.unlocked=true;
+
+  popupIcon.textContent="✨";
+  popupTitle.textContent=selectedNode.title;
+  popupText.textContent=selectedNode.secret;
+  popupCost.textContent="";
+
+  unlockButton.style.display="none";
+
+  render();
+});
+
+closeButton.addEventListener("click",e=>{
+
+  e.stopPropagation();
+  popup.classList.remove("show");
+
+});
+
+popup.addEventListener("pointerdown",e=>{
+
+  if(e.target===popup){
+    popup.classList.remove("show");
+  }
+
+});
+
+viewport.addEventListener("pointerdown",e=>{
+
+  if(e.target.closest(".node"))return;
+  if(e.target.closest("#score"))return;
+
+  dragging=true;
+  moved=false;
+
+  startPointerX=e.clientX;
+  startPointerY=e.clientY;
+
+  startOffsetX=offsetX;
+  startOffsetY=offsetY;
+
+  viewport.classList.add("dragging");
+
+  viewport.setPointerCapture(e.pointerId);
+});
+
+viewport.addEventListener("pointermove",e=>{
+
+  if(!dragging)return;
+
+  const dx=e.clientX-startPointerX;
+  const dy=e.clientY-startPointerY;
+
+  if(Math.abs(dx)>5||Math.abs(dy)>5){
+    moved=true;
+  }
+
+  if(moved){
+
+    offsetX=startOffsetX+dx;
+    offsetY=startOffsetY+dy;
+
+    updateMap();
+  }
+
+});
+
+viewport.addEventListener("pointerup",e=>{
+
+  dragging=false;
+
+  viewport.classList.remove("dragging");
+
+  try{
+    viewport.releasePointerCapture(e.pointerId);
+  }catch(error){}
+
+});
+
+viewport.addEventListener("pointercancel",()=>{
+
+  dragging=false;
+  viewport.classList.remove("dragging");
+
+});
+
+viewport.addEventListener("wheel",e=>{
+
+  e.preventDefault();
+
+  scale=Math.max(
+    .5,
+    Math.min(
+      2,
+      scale+(e.deltaY>0?-.1:.1)
+    )
+  );
+
+  updateMap();
+
+},{passive:false});
+
+function updateMap(){
+
+  map.style.transform=
+    `translate(${offsetX}px,${offsetY}px) scale(${scale})`;
+
+}
+
+render();
+updateMap();
+
+</script>
 
 </body>
 </html>
