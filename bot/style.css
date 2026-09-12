@@ -1,0 +1,396 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    color: #ffffff;
+
+    background:
+        radial-gradient(
+            circle at 20% 10%,
+            #39206b 0%,
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 80% 30%,
+            #172e68 0%,
+            transparent 35%
+        ),
+        #080612;
+
+    overflow-x: hidden;
+}
+
+
+/* Звёзды */
+
+.stars {
+    position: fixed;
+    inset: 0;
+
+    pointer-events: none;
+
+    background-image:
+        radial-gradient(#ffffff 1px, transparent 1px);
+
+    background-size: 45px 45px;
+
+    opacity: 0.15;
+}
+
+
+/* Основной контейнер */
+
+.app {
+    position: relative;
+
+    width: 100%;
+    max-width: 600px;
+
+    margin: auto;
+
+    padding: 25px 16px 50px;
+}
+
+
+/* Header */
+
+.header {
+    text-align: center;
+
+    margin-bottom: 25px;
+}
+
+.magic-icon {
+    font-size: 55px;
+
+    margin-bottom: 5px;
+
+    filter:
+        drop-shadow(0 0 15px #9d5cff);
+}
+
+.header h1 {
+    font-size: 32px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #cda8ff,
+            #ffffff,
+            #9db8ff
+        );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    color: transparent;
+
+    letter-spacing: 1px;
+}
+
+.header p {
+    margin-top: 7px;
+
+    color: #aaa4c7;
+
+    font-size: 14px;
+}
+
+
+/* Карточка пользователя */
+
+.user-card {
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 17px;
+
+    margin-bottom: 30px;
+
+    border: 1px solid rgba(170, 120, 255, 0.25);
+
+    border-radius: 20px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(100, 60, 160, 0.25),
+            rgba(30, 30, 70, 0.4)
+        );
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.3);
+
+    backdrop-filter: blur(10px);
+}
+
+.avatar {
+    width: 55px;
+    height: 55px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #6f3db8,
+            #2e4ca1
+        );
+
+    font-size: 25px;
+
+    box-shadow:
+        0 0 20px rgba(130, 80, 255, 0.5);
+}
+
+.user-info {
+    flex: 1;
+}
+
+.label {
+    display: block;
+
+    color: #918ba8;
+
+    font-size: 12px;
+
+    margin-bottom: 3px;
+}
+
+.user-info h2 {
+    font-size: 17px;
+}
+
+.user-info p {
+    margin-top: 3px;
+
+    color: #bd9aff;
+
+    font-size: 13px;
+}
+
+
+/* Заголовки */
+
+.section-title {
+    font-size: 19px;
+
+    margin-bottom: 14px;
+}
+
+
+/* Роли */
+
+.roles {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+}
+
+.role-card {
+    position: relative;
+
+    border: 1px solid rgba(165, 117, 255, 0.25);
+
+    border-radius: 18px;
+
+    padding: 17px 12px;
+
+    text-align: left;
+
+    color: white;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(60, 40, 95, 0.7),
+            rgba(22, 22, 48, 0.85)
+        );
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s,
+        border-color 0.2s,
+        box-shadow 0.2s;
+}
+
+.role-card:active {
+    transform: scale(0.96);
+}
+
+.role-card:hover {
+    border-color: rgba(188, 140, 255, 0.7);
+
+    box-shadow:
+        0 0 20px rgba(130, 70, 255, 0.2);
+}
+
+.role-card.selected {
+    border-color: #b77aff;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(100, 55, 160, 0.7),
+            rgba(35, 30, 70, 0.9)
+        );
+
+    box-shadow:
+        0 0 25px rgba(145, 80, 255, 0.35);
+}
+
+.role-icon {
+    display: block;
+
+    font-size: 34px;
+
+    margin-bottom: 9px;
+}
+
+.role-name {
+    display: block;
+
+    font-size: 16px;
+
+    font-weight: 700;
+}
+
+.role-description {
+    display: block;
+
+    margin-top: 5px;
+
+    color: #aaa3be;
+
+    font-size: 11px;
+
+    line-height: 1.3;
+}
+
+
+/* Участники */
+
+.players-section {
+    margin-top: 35px;
+}
+
+.player {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 13px;
+
+    margin-bottom: 9px;
+
+    border-radius: 14px;
+
+    background: rgba(255, 255, 255, 0.04);
+
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.player-avatar {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #272044;
+
+    font-size: 18px;
+}
+
+.player-info {
+    flex: 1;
+}
+
+.player-name {
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+.player-role {
+    margin-top: 2px;
+
+    color: #a98ee0;
+
+    font-size: 12px;
+}
+
+
+/* Уведомление */
+
+.notification {
+    position: fixed;
+
+    left: 50%;
+    bottom: 25px;
+
+    transform:
+        translate(-50%, 100px);
+
+    padding: 13px 20px;
+
+    border-radius: 30px;
+
+    background: #302050;
+
+    border: 1px solid #9c66e8;
+
+    box-shadow:
+        0 5px 25px rgba(0, 0, 0, 0.4);
+
+    font-size: 14px;
+
+    transition:
+        transform 0.3s ease;
+
+    z-index: 100;
+}
+
+.notification.show {
+    transform:
+        translate(-50%, 0);
+}
+
+
+/* Телефоны */
+
+@media (max-width: 420px) {
+
+    .roles {
+        grid-template-columns: 1fr;
+    }
+
+    .header h1 {
+        font-size: 28px;
+    }
+}

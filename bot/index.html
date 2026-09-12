@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Magic Roles</title>
+
+    <!-- Telegram Mini App -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="stars"></div>
+
+<main class="app">
+
+    <header class="header">
+        <div class="magic-icon">🔮</div>
+
+        <h1>Magic Roles</h1>
+
+        <p>Тайна магических ролей</p>
+    </header>
+
+
+    <!-- Пользователь -->
+    <section class="user-card">
+
+        <div class="avatar" id="avatar">
+            ✨
+        </div>
+
+        <div class="user-info">
+            <span class="label">Твой персонаж</span>
+            <h2 id="username">Магический странник</h2>
+            <p id="currentRole">Роль ещё не выбрана</p>
+        </div>
+
+    </section>
+
+
+    <!-- Выбор роли -->
+    <section class="roles-section">
+
+        <h2 class="section-title">
+            ✨ Выбери свою роль
+        </h2>
+
+        <div class="roles">
+
+            <button class="role-card" data-role="Архимаг">
+                <span class="role-icon">🧙</span>
+                <span class="role-name">Архимаг</span>
+                <span class="role-description">
+                    Повелитель древней магии
+                </span>
+            </button>
+
+            <button class="role-card" data-role="Ведьма">
+                <span class="role-icon">🧹</span>
+                <span class="role-name">Ведьма</span>
+                <span class="role-description">
+                    Хранительница тайных заклинаний
+                </span>
+            </button>
+
+            <button class="role-card" data-role="Воин">
+                <span class="role-icon">⚔️</span>
+                <span class="role-name">Воин</span>
+                <span class="role-description">
+                    Защитник магического мира
+                </span>
+            </button>
+
+            <button class="role-card" data-role="Целитель">
+                <span class="role-icon">🌿</span>
+                <span class="role-name">Целитель</span>
+                <span class="role-description">
+                    Повелитель жизни и природы
+                </span>
+            </button>
+
+            <button class="role-card" data-role="Некромант">
+                <span class="role-icon">💀</span>
+                <span class="role-name">Некромант</span>
+                <span class="role-description">
+                    Повелитель тёмной магии
+                </span>
+            </button>
+
+            <button class="role-card" data-role="Друид">
+                <span class="role-icon">🌲</span>
+                <span class="role-name">Друид</span>
+                <span class="role-description">
+                    Хранитель сил природы
+                </span>
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- Участники -->
+    <section class="players-section">
+
+        <h2 class="section-title">
+            👥 Участники
+        </h2>
+
+        <div id="players"></div>
+
+    </section>
+
+</main>
+
+
+<!-- Уведомление -->
+<div id="notification" class="notification">
+    ✨ Роль выбрана!
+</div>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>
