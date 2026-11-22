@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Numogram — новая визуализация</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0f14;--ink:#eef3fb;--muted:#93a1b7;--panel:#141c28;--line:#28374d;--a:#ffcc66;--b:#69d3ff;--c:#9dffb0;--d:#ff8fb1}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font:15px/1.5 Inter,system-ui,sans-serif;color:var(--ink);background:
+radial-gradient(1200px 600px at 20% -10%,#1a2a40 0,transparent 60%),
+radial-gradient(900px 500px at 100% 0%,#241a38 0,transparent 55%),var(--bg)}
+.wrap{max-width:1400px;margin:0 auto;padding:24px}
+h1{margin:0;font-size:clamp(28px,4vw,46px);letter-spacing:.02em}
+.lead{color:var(--muted);max-width:900px;margin:8px 0 0}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:18px;margin-top:20px;align-items:start}
+.card{background:linear-gradient(180deg,#182233,#121a27);border:1px solid var(--line);border-radius:18px;padding:16px}
+.card h2{font-size:14px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.08em;color:#dce8f8}
+label{display:block;font-size:12px;color:#c8d5e6;margin:10px 0 6px}
+input[type=range],select{width:100%}
+select{background:#0e1622;color:var(--ink);border:1px solid #344a64;border-radius:10px;padding:10px;font:inherit}
+input[type=range]{accent-color:var(--b)}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;color:#c8d5e6;font-size:12px;margin:10px 0}
+.row input{accent-color:var(--b)}
+.swatches{display:grid;gap:8px;margin-top:14px;font-size:12px;color:#d5deea}
+.sw{display:flex;gap:10px;align-items:center}.dot{width:14px;height:14px;border-radius:4px}
+svg{width:100%;height:720px;display:block;border-radius:18px;background:radial-gradient(circle at 50% 45%,#16243a 0,#0d1521 68%);border:1px solid #2a3a52}
+.info{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.mini{background:#0f1826;border:1px solid #2a3b55;border-radius:14px;padding:12px}
+.mini b{display:block;font-size:12px;color:#bcd0ea;margin-bottom:4px}
+.mini div{font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+th,td{padding:9px 8px;border-bottom:1px solid #283b55;text-align:left}
+th{color:#bfd0e6;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+table.compact{margin-top:10px;font-size:12px}
+table.compact th,table.compact td{padding:4px 8px}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:8px;font-size:12px;color:#b7c7dc}
+.pager button{background:#162235;color:var(--ink);border:1px solid #344a64;border-radius:8px;padding:4px 10px;cursor:pointer;font:inherit}
+.pager button:disabled{opacity:1;cursor:default;color:#cfd8e3;border-color:#4a5565;background:#1a2432}
+.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
+.edge,.edge-label,.edge-hit{cursor:pointer}
+.edge-hit{pointer-events:stroke}
+.edge.hl{stroke-opacity:1 !important;filter:drop-shadow(0 0 5px rgba(255,255,255,.45));stroke-width:4 !important}
+.edge-label.hl{fill:#fff !important;font-weight:700;}
+.node-hl circle{stroke:#fff !important;stroke-width:4 !important;filter:drop-shadow(0 0 8px rgba(255,255,255,.45));}
+@media(max-width:980px){.grid{grid-template-columns:1fr}.info{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>NUMOGRAM</h1>
+
+  <div class="grid">
+    <aside class="card">
+      <h2>Управление</h2>
+      <label>Сумма сизигии</label>
+      <input id="n" type="number" min="1" value="9" style="width:100%;background:#0e1622;color:var(--ink);border:1px solid #344a64;border-radius:10px;padding:10px;font:inherit">
+      <label>Основание</label>
+      <select id="base">
+        <option value="2">2 (binary)</option>
+        <option value="8">8</option>
+        <option value="10" selected>10</option>
+        <option value="12">12</option>
+        <option value="16">16</option>
+      </select>
+      <div class="row"><span>Сизигии-ножницы</span><input id="showSyzygy" type="checkbox" checked></div>
+      <div class="row"><span>Треугольные потоки</span><input id="showTri" type="checkbox" checked></div>
+      <div class="row"><span>Стрелки разности</span><input id="showDiff" type="checkbox" checked></div>
+      <div class="row"><span>Стрелки демонов</span><input id="showDemons" type="checkbox"></div>
+      <div class="row"><span>Подписи</span><input id="showText" type="checkbox" checked></div>
+      <div class="swatches">
+        <div class="sw"><span class="dot" style="background:var(--a)"></span>Сизигия: пара с суммой N−1</div>
+        <div class="sw"><span class="dot" style="background:var(--b)"></span>Треугольный поток: Tₙ → digital root</div>
+        <div class="sw"><span class="dot" style="background:var(--d)"></span>Разность: |a−b| от стебля пары</div>
+        <div class="sw"><span class="dot" style="background:#dfe6ef"></span>Демоны: связи между зонами</div>
+      </div>
+    </aside>
+
+    <main class="card">
+      <svg id="svg" viewBox="0 0 1200 900" aria-label="Numogram diagram"></svg>
+      <div class="info">
+        <div class="mini"><b>Сизигии</b><div id="syzInfo"></div></div>
+        <div class="mini"><b>Демоны</b><div id="relInfo"></div></div>
+        <div class="mini"><b>Треугольный поток</b><div id="triInfo">Наведи/нажми на зону</div></div>
+        <div class="mini"><b>Разность</b><div id="diffInfo">Наведи/нажми на зону</div></div>
+      </div>
+      <div class="table-wrap">
+        <div class="pager" id="pager"></div>
+        <table class="compact">
+          <thead><tr><th>#</th><th>Демон</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { active: null, zoom: 1, panX: 0, panY: 0, dragging: false, dragMoved: false, justDragged: false, dragStartX: 0, dragStartY: 0, panStartX: 0, panStartY: 0, demonPage: 0 };
+
+function cfg() {
+  const syzSum = Math.max(1, Math.floor(+$('n').value) || 9);
+  return {
+    n: syzSum + 1,
+    syzSum,
+    base: +$('base').value,
+    syzygy: $('showSyzygy').checked,
+    tri: $('showTri').checked,
+    diff: $('showDiff').checked,
+    demons: $('showDemons').checked,
+    text: $('showText').checked,
+  };
+}
+
+const fmt = (v, base) => v.toString(base).toUpperCase();
+const tri = (n) => n * (n + 1) / 2;
+function digitalRoot(n) {
+  n = Math.abs(n);
+  while (n > 9) n = String(n).split('').reduce((s, d) => s + +d, 0);
+  return n;
+}
+function reduceSteps(n) {
+  const steps = [n];
+  while (n > 9) { n = String(n).split('').reduce((s,d)=>s+ +d,0); steps.push(n); }
+  return steps;
+}
+
+function pairs(n) {
+  const out = [];
+  for (let i = 0; i < Math.floor(n / 2); i++) out.push([i, n - 1 - i]);
+  return out;
+}
+
+function diffCycles(n) {
+  const syz = pairs(n);
+  if(n===10){
+    const byNode=new Map(); syz.forEach((p,i)=>{byNode.set(p[0],i);byNode.set(p[1],i);});
+    const pick=[1,2,4].map(v=>byNode.get(v)).filter(x=>x!==undefined);
+    const info=syz.map(([a,b])=>({a,b,diff:Math.abs(a-b),target:Math.abs(a-b)%n}));
+    return {syz, cycles:[pick.map(i=>info[i])]};
+  }
+  const byNode = new Map();
+  syz.forEach((p,i)=>{ byNode.set(p[0],i); byNode.set(p[1],i); });
+  const info = syz.map(([a,b])=>({a,b,diff:Math.abs(a-b), target:Math.abs(a-b)%n}));
+  const visited = new Set(); const cycles=[];
+  for (let i=0;i<info.length;i++){
+    if(visited.has(i)) continue;
+    const chain=[]; const seen=new Map(); let cur=i;
+    while(!seen.has(cur) && !visited.has(cur)){
+      seen.set(cur,chain.length); chain.push(cur);
+      const next=byNode.get(info[cur].target);
+      if(next===undefined) break;
+      cur=next;
+    }
+    if(seen.has(cur)){
+      const cyc=chain.slice(seen.get(cur));
+      cyc.forEach(x=>visited.add(x));
+      if(cyc.length>=3) cycles.push(cyc.map(j=>info[j]));
+    }
+    chain.forEach(x=>visited.add(x));
+  }
+  return {syz, cycles};
+}
+
+function nodePos(n, W, H) {
+  const {syz, cycles} = diffCycles(n);
+  const pos = Array(n);
+  const mid = n % 2 ? (n - 1) / 2 : null;
+  const cycleNodes = new Set();
+  cycles.forEach(cyc=>cyc.forEach(d=>{cycleNodes.add(d.a);cycleNodes.add(d.b);}));
+  const cyclePairSet = new Set();
+  const cycleSyzygies = [];
+  cycles.forEach(cyc => cyc.forEach(d => {
+    const k = d.a + '-' + d.b;
+    if (!cyclePairSet.has(k)) { cyclePairSet.add(k); cycleSyzygies.push([d.a, d.b]); }
+  }));
+  const otherSyzygies = syz.filter(([a,b]) => !cyclePairSet.has(a+'-'+b));
+
+  if (cycles.length>0) {
+    // Place cycle syzygies in a big circle
+    const cx=W/2, cy=H*0.46;
+    const list = cycleSyzygies;
+    const R = Math.min(Math.max(Math.min(W,H)*0.30, list.length * 42), Math.min(W,H)/2 - 140);
+    list.forEach(([a,b], i) => {
+      const ang = -Math.PI/2 + i*(Math.PI*2/list.length);
+      const gx = cx + Math.cos(ang)*R;
+      const gy = cy + Math.sin(ang)*R;
+      const px = -Math.sin(ang), py = Math.cos(ang); // tangent
+      const reciprocal = (digitalRoot(tri(a))%n===b && digitalRoot(tri(b))%n===a);
+      const off = 36 + (reciprocal ? 26 : 0);
+      pos[a] = {x: gx - px*off, y: gy - py*off};
+      pos[b] = {x: gx + px*off, y: gy + py*off};
+    });
+    // others in a row below
+    const rowY = H*0.86;
+    const usableW=W-140; const gap2 = otherSyzygies.length>1 ? usableW/(otherSyzygies.length-1):0;
+    otherSyzygies.forEach(([a,b],i)=>{
+      const gx=70 + gap2*i;
+      const reciprocal = (digitalRoot(tri(a))%n===b && digitalRoot(tri(b))%n===a);
+      const off = 44 + (reciprocal ? 24 : 0);
+      pos[a]={x:gx-off,y:rowY-16}; pos[b]={x:gx+off,y:rowY+16};
+    });
+    if(mid!==null && !pos[mid]) pos[mid]={x:W/2,y:rowY};
+  } else {
+    // fallback row
+    const groups = syz.length + (mid !== null ? 1 : 0);
+    const padX=90, usableW=W-padX*2, gap=groups>1?usableW/(groups-1):0;
+    const cy=H*0.54;
+    const maxOffByGap = groups>1 ? Math.max(28, gap/2 - 36) : 56;
+    const baseOff=Math.min(56, Math.max(28, Math.min(maxOffByGap, usableW/(groups*2.6))));
+    syz.forEach(([a,b],i)=>{
+      const gx=padX+gap*i;
+      const reciprocal = (digitalRoot(tri(a))%n===b && digitalRoot(tri(b))%n===a);
+      const pairOffset = Math.min(maxOffByGap, baseOff + (reciprocal ? 24 : 0));
+      pos[a]={x:gx-pairOffset,y:cy-22}; pos[b]={x:gx+pairOffset,y:cy+22};
+    });
+    if(mid!==null) pos[mid]={x:padX+gap*(groups-1),y:cy};
+  }
+  for(let i=0;i<n;i++) if(!pos[i]) pos[i]={x:60+i*50,y:H/2};
+  return pos;
+}
+
+function arcPath(p, q, bend=0.22, bias=-1) {
+  const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
+  const dx = q.x - p.x, dy = q.y - p.y;
+  const len = Math.hypot(dx, dy) || 1;
+  // perpendicular
+  let nx = -dy / len, ny = dx / len;
+  if (ny * bias < 0) { nx = -nx; ny = -ny; } // prefer bias direction ( -1 = upward )
+  const k = len * bend;
+  const cpx = mx + nx * k;
+  const cpy = my + ny * k;
+  return { d: `M ${p.x} ${p.y} Q ${cpx} ${cpy} ${q.x} ${q.y}`, cpx, cpy };
+}
+
+function arcToward(p, q, tx, ty, amount=0.25) {
+  const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
+  const dx = tx - mx, dy = ty - my;
+  const dl = Math.hypot(dx, dy) || 1;
+  const dist = Math.hypot(p.x-q.x, p.y-q.y);
+  const cpx = mx + dx/dl * dist * amount;
+  const cpy = my + dy/dl * dist * amount;
+  return { d: `M ${p.x} ${p.y} Q ${cpx} ${cpy} ${q.x} ${q.y}`, cpx, cpy };
+}
+
+function pointOnQuad(p, c, q, t) {
+  const mt = 1 - t;
+  return { x: mt*mt*p.x + 2*mt*t*c.x + t*t*q.x, y: mt*mt*p.y + 2*mt*t*c.y + t*t*q.y };
+}
+
+function shortenQuad(p, c, q, start=28, end=32) {
+  // approximate by trimming along start/end tangents
+  const t1x = c.x - p.x, t1y = c.y - p.y, l1 = Math.hypot(t1x,t1y)||1;
+  const t2x = c.x - q.x, t2y = c.y - q.y, l2 = Math.hypot(t2x,t2y)||1;
+  const sp = { x: p.x + t1x/l1*start, y: p.y + t1y/l1*start };
+  const ep = { x: q.x + t2x/l2*end, y: q.y + t2y/l2*end };
+  return `M ${sp.x} ${sp.y} Q ${c.x} ${c.y} ${ep.x} ${ep.y}`;
+}
+
+function marker(id, color) {
+  return `<marker id="${id}" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="${color}"/></marker>`;
+}
+
+function svgLabel(x, y, text, fill, {size=13, anchor='middle', attrs=''}={}) {
+  return `<text ${attrs} x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" fill="${fill}" class="mono">${text}</text>`;
+}
+
+function render() {
+  const c = cfg();
+  const heavy = c.n > 120;
+  const skipLabels = c.n > 180;
+  const {cycles} = diffCycles(c.n);
+  const hasCycle = cycles.length>0;
+  const groups = Math.floor(c.n/2) + (c.n%2?1:0);
+  const W = hasCycle ? Math.max(1100, groups * 140 + 300) : Math.max(900, groups * 220 + 140);
+  const H = hasCycle ? Math.max(980, groups * 60 + 700) : 760;
+  const cx = W/2, cy = H/2;
+  const pos = nodePos(c.n, W, H);
+  const syz = pairs(c.n);
+  $('syzInfo').innerHTML = `<div class="mono">Количество: ${syz.length}</div><div class="mono" style="margin-top:4px;height:72px;overflow-y:auto;white-space:normal;line-height:1.5;padding-right:4px">${syz.map(([a,b])=>`${fmt(a,c.base)}::${fmt(b,c.base)}`).join(', ') || '—'}</div>`;
+  const relCount = c.n * (c.n - 1) / 2;
+  $('relInfo').innerHTML = `<div class="mono">Количество: ${relCount}</div>`;
+
+  let out = `<defs>
+    ${marker('mTri','#69d3ff')}
+    ${marker('mDiff','#ff8fb1')}
+    ${marker('mDem','#dfe6ef')}
+  </defs>`;
+  out += `<g id="vp" transform="translate(${state.panX} ${state.panY}) scale(${state.zoom})">`;
+  const labelItems = [];
+  const addLabel = (x,y,text,fill,size=13,attrs='') => { if (!skipLabels) labelItems.push({x,y,text:String(text),fill,size,attrs}); };
+  let edgeSeq=0;
+  const mkEdge = (nodes) => { const id='e'+(++edgeSeq); return {id, nodes:nodes.join(','), attr:`data-edge="${id}" data-nodes="${nodes.join(',')}" class="edge"`}; };
+  const drawEdge = (ed, d, {stroke, sw, dash='', marker='', extra='', hitW=14}) => {
+    const hit = `<path d="${d}" fill="none" stroke="transparent" stroke-width="${hitW}" stroke-dasharray="none" data-edge="${ed.id}" data-nodes="${ed.nodes}" class="edge-hit"/>`;
+    const vis = `<path ${ed.attr} d="${d}" fill="none" stroke="${stroke}" stroke-width="${sw}" ${dash?`stroke-dasharray="${dash}"`:''} ${marker?`marker-end="url(#${marker})"`:''} ${extra}/>`;
+    return hit + vis;
+  };
+
+  // demon arrows
+  if (c.demons && relCount <= 5151) {
+    for (let i = 1; i < c.n; i++) {
+      for (let j = 0; j < i; j++) {
+        const p = pos[i], q = pos[j];
+        const active = state.active === i || state.active === j;
+        const ed = mkEdge([i, j]);
+        const bend = 0.12 + ((i + j) % 5) * 0.03;
+        const bias = ((i * 7 + j) % 2 === 0) ? 1 : -1;
+        const arc = arcPath(p, q, bend, bias);
+        out += drawEdge(ed, shortenQuad(p,{x:arc.cpx,y:arc.cpy},q,28,28), {stroke:`rgba(223,230,239,${active?0.95:0.35})`, sw:active?2.4:1.2, marker:'mDem'});
+      }
+    }
+  }
+
+  // syzygy scissors
+  if (c.syzygy) {
+    syz.forEach(([a,b], idx) => {
+      const p = pos[a], q = pos[b];
+      const arc = arcPath(p,q,0.08,1);
+      const mid = pointOnQuad(p,{x:arc.cpx,y:arc.cpy},q,0.5);
+      const active = state.active===a || state.active===b;
+      const edS = mkEdge([a,b]);
+      out += drawEdge(edS, arc.d, {stroke:`rgba(255,204,102,${active?0.95:0.55})`, sw:active?5:3.5, extra:'stroke-linecap="round"', hitW:16});
+      // hinge
+      out += `<circle cx="${mid.x}" cy="${mid.y}" r="6" fill="#ffcc66" stroke="#1b2433" stroke-width="2"/>`;
+
+
+      // difference deferred to cycle/arrow pass
+      if (c.diff) { /* rendered below */ }
+    });
+  }
+
+  // triangular flows
+  if (c.tri) {
+    const triInfo = Array.from({length:c.n}, (_,i) => {
+      const k=i, T=tri(k), dr=digitalRoot(T);
+      return {i,k,T,dr,target: dr % c.n};
+    });
+    const drawn = new Set();
+    for (let i=0; i<c.n; i++) {
+      if (i === 0) continue;
+      const ti = triInfo[i];
+      const target = ti.target;
+      if (i === target) {
+        const p = pos[i];
+        const active = state.active===i;
+        const ed = mkEdge([i]);
+        out += drawEdge(ed, `M ${p.x-10} ${p.y-30} C ${p.x-45} ${p.y-70}, ${p.x+45} ${p.y-70}, ${p.x+12} ${p.y-32}`, {stroke:`rgba(105,211,255,${active?0.95:0.7})`, sw:2.4, marker:'mTri'});
+        if (c.text) addLabel(p.x, p.y-72, `${ti.T}`, '#dff7ff', 13, `data-edge="${ed.id}" class="edge-label"`);
+        continue;
+      }
+      const j = target;
+      const tj = triInfo[j];
+      if (tj && tj.target === i && !drawn.has(i+'-'+j) && !drawn.has(j+'-'+i)) {
+        // reciprocal pair: draw two opposite arcs
+        drawn.add(i+'-'+j); drawn.add(j+'-'+i);
+        const a = Math.min(i,j), b = Math.max(i,j);
+        const fromA = (i===a) ? triInfo[a] : triInfo[b];
+        const fromB = (i===a) ? triInfo[b] : triInfo[a];
+        const pa = pos[a], pb = pos[b];
+        const drawOne = (from, toPos, fromPos, bias) => {
+          const act = state.active===from.i || state.active===from.target;
+          const ed = mkEdge([from.i, from.target]);
+          let best;
+          if (heavy) {
+            const arc = arcPath(fromPos,toPos,0.32,bias);
+            const lm=pointOnQuad(fromPos,{x:arc.cpx,y:arc.cpy},toPos,0.5);
+            const mx=(fromPos.x+toPos.x)/2,my=(fromPos.y+toPos.y)/2,ox=arc.cpx-mx,oy=arc.cpy-my,ol=Math.hypot(ox,oy)||1;
+            best={arc,lp:{x:lm.x+ox/ol*22,y:lm.y+oy/ol*22}};
+          } else {
+            const bends = [[0.28,bias],[0.38,bias],[0.48,bias]];
+            best=null; let bestScore=-1e9;
+            for (const [bend,bs] of bends) {
+              const arc = arcPath(fromPos,toPos,bend,bs);
+              const cpt={x:arc.cpx,y:arc.cpy};
+              const samples=[0.25,0.5,0.75].map(t=>pointOnQuad(fromPos,cpt,toPos,t));
+              const lm=pointOnQuad(fromPos,cpt,toPos,0.5);
+              const mx=(fromPos.x+toPos.x)/2,my=(fromPos.y+toPos.y)/2,ox=arc.cpx-mx,oy=arc.cpy-my,ol=Math.hypot(ox,oy)||1;
+              const lp={x:lm.x+ox/ol*22,y:lm.y+oy/ol*22};
+              let minD=1e9;
+              for (let k2=0;k2<pos.length;k2++) { if(k2===from.i||k2===from.target) continue; for(const s of samples) minD=Math.min(minD,Math.hypot(s.x-pos[k2].x,s.y-pos[k2].y)); }
+              if (minD>bestScore){bestScore=minD;best={arc,lp};}
+            }
+          }
+          out += drawEdge(ed, shortenQuad(fromPos,{x:best.arc.cpx,y:best.arc.cpy},toPos,30,34), {stroke:`rgba(105,211,255,${act?0.95:0.5})`, sw:act?3.2:2.2, marker:'mTri'});
+          if (c.text) addLabel(best.lp.x, best.lp.y, `${from.T}`, '#dff7ff', 13, `data-edge="${ed.id}" class="edge-label"`);
+        };
+        drawOne(fromA, pb, pa, -1);
+        drawOne(fromB, pa, pb, 1);
+        continue;
+      }
+      if (drawn.has(i+'-'+target)) continue;
+      drawn.add(i+'-'+target);
+      const p = pos[i], q = pos[target];
+      const active = state.active===i || state.active===target;
+      let best;
+      if (heavy) {
+        const arc = arcPath(p,q,0.28,(i%2===0?-1:1));
+        const lm=pointOnQuad(p,{x:arc.cpx,y:arc.cpy},q,0.5);
+        const mx=(p.x+q.x)/2,my=(p.y+q.y)/2,ox=arc.cpx-mx,oy=arc.cpy-my,ol=Math.hypot(ox,oy)||1;
+        best={arc, lp:{x:lm.x+ox/ol*22,y:lm.y+oy/ol*22}};
+      } else {
+        const ignore = new Set([i,target]);
+        const bends = [[0.20,-1],[0.20,1],[0.32,-1],[0.32,1],[0.45,-1],[0.45,1]];
+        best=null; let bestScore=-1e9;
+        for (const [bend,bias] of bends) {
+          const arc = arcPath(p,q,bend,bias);
+          const cpt={x:arc.cpx,y:arc.cpy};
+          const samples=[0.25,0.5,0.75].map(t=>pointOnQuad(p,cpt,q,t));
+          const lm=pointOnQuad(p,cpt,q,0.5);
+          const mx=(p.x+q.x)/2,my=(p.y+q.y)/2,ox=arc.cpx-mx,oy=arc.cpy-my,ol=Math.hypot(ox,oy)||1;
+          const lp={x:lm.x+ox/ol*22,y:lm.y+oy/ol*22};
+          let minD=1e9;
+          for (let j2=0;j2<pos.length;j2++) {
+            if (ignore.has(j2)) continue;
+            for (const s of samples) minD=Math.min(minD, Math.hypot(s.x-pos[j2].x,s.y-pos[j2].y));
+            minD=Math.min(minD, Math.hypot(lp.x-pos[j2].x,lp.y-pos[j2].y));
+          }
+          const score=minD-bend*8;
+          if (score>bestScore) { bestScore=score; best={arc,lp}; }
+        }
+      }
+      const ed = mkEdge([i,target]);
+      out += drawEdge(ed, shortenQuad(p,{x:best.arc.cpx,y:best.arc.cpy},q,30,34), {stroke:`rgba(105,211,255,${active?0.95:0.45})`, sw:active?3.2:2.2, marker:'mTri'});
+      if (c.text) {
+        let lx=best.lp.x, ly=best.lp.y;
+        if (Math.hypot(lx-q.x,ly-q.y) < 42) {
+          const mx=(p.x+q.x)/2,my=(p.y+q.y)/2,ox=best.arc.cpx-mx,oy=best.arc.cpy-my,ol=Math.hypot(ox,oy)||1;
+          lx+=ox/ol*18; ly+=oy/ol*18;
+        }
+        addLabel(lx, ly, `${ti.T}`, '#dff7ff', 13, `data-edge="${ed.id}" class="edge-label"`);
+      }
+    }
+  }
+
+  // difference arrows
+  if (c.diff) {
+    const diffInfo = syz.map(([a,b]) => {
+      const diff = Math.abs(a-b); const target = diff%c.n;
+      const p=pos[a],q=pos[b], arc=arcPath(p,q,0.08,1), mid=pointOnQuad(p,{x:arc.cpx,y:arc.cpy},q,0.5);
+      return {a,b,diff,target,mid};
+    });
+    const inCycle = new Set();
+    cycles.forEach(cyc => cyc.forEach(x => inCycle.add(x.a+'-'+x.b)));
+    diffInfo.forEach(d=>{
+      const tp = pos[d.target];
+      const activeDiff = state.active===d.a || state.active===d.b || state.active===d.target;
+      if (d.target===d.a || d.target===d.b) {
+        const p=tp;
+        const ed = mkEdge([d.a,d.b,d.target]);
+        out += drawEdge(ed, `M ${p.x+30} ${p.y-8} C ${p.x+72} ${p.y-30}, ${p.x+72} ${p.y+30}, ${p.x+30} ${p.y+10}`, {stroke:`rgba(255,143,177,${activeDiff?1:.75})`, sw:2.4, dash:'6 5', marker:'mDiff'});
+        if (c.text) { const hi=Math.max(d.a,d.b), lo=Math.min(d.a,d.b); addLabel(p.x+72, p.y+2, `${fmt(hi,c.base)}-${fmt(lo,c.base)}=${fmt(d.diff,c.base)}`, '#ffd6e2', 12, `data-edge="${ed.id}" class="edge-label"`); }
+      } else if (inCycle.has(d.a+'-'+d.b)) {
+        const ed = mkEdge([d.a,d.b,d.target]);
+        const darc = arcToward(d.mid, tp, cx, cy, -0.28);
+        out += drawEdge(ed, shortenQuad(d.mid,{x:darc.cpx,y:darc.cpy},tp,0,32), {stroke:`rgba(255,143,177,${activeDiff?1:.78})`, sw:activeDiff?3:2.5, dash:'7 6', marker:'mDiff'});
+        if (c.text) {
+          const lm = pointOnQuad(d.mid,{x:darc.cpx,y:darc.cpy},tp,0.45);
+          const mx=(d.mid.x+tp.x)/2, my=(d.mid.y+tp.y)/2, ox=darc.cpx-mx, oy=darc.cpy-my, ol=Math.hypot(ox,oy)||1;
+          const hi=Math.max(d.a,d.b), lo=Math.min(d.a,d.b);
+          addLabel(lm.x + ox/ol*16, lm.y + oy/ol*16, `${fmt(hi,c.base)}-${fmt(lo,c.base)}=${fmt(d.diff,c.base)}`, '#ffd6e2', 12, `data-edge="${ed.id}" class="edge-label"`);
+        }
+      } else {
+        const ed = mkEdge([d.a,d.b,d.target]);
+        const ignore = new Set([d.target]);
+        let best;
+        if (heavy) {
+          const arc = arcPath(d.mid,tp,0.22,-1);
+          const lm = pointOnQuad(d.mid,{x:arc.cpx,y:arc.cpy},tp,0.45);
+          const mx=(d.mid.x+tp.x)/2, my=(d.mid.y+tp.y)/2, ox=arc.cpx-mx, oy=arc.cpy-my, ol=Math.hypot(ox,oy)||1;
+          best={arc, lm:{x:lm.x+ox/ol*18, y:lm.y+oy/ol*18}};
+        } else {
+          const bends = [[0.18,-1],[0.18,1],[0.30,-1],[0.30,1],[0.45,-1],[0.45,1],[0.60,-1],[0.60,1],[0.75,-1],[0.75,1]];
+          best=null; let bestScore=-1e9;
+          for (const [bend,bias] of bends) {
+            const arc = arcPath(d.mid,tp,bend,bias);
+            const cpt = {x:arc.cpx,y:arc.cpy};
+            const samples = [0.2,0.35,0.5,0.65,0.8].map(t=>pointOnQuad(d.mid,cpt,tp,t));
+            const lm = pointOnQuad(d.mid,cpt,tp,0.45);
+            const mx=(d.mid.x+tp.x)/2, my=(d.mid.y+tp.y)/2, ox=arc.cpx-mx, oy=arc.cpy-my, ol=Math.hypot(ox,oy)||1;
+            const lp = {x:lm.x+ox/ol*18, y:lm.y+oy/ol*18};
+            let minD = 1e9;
+            for (let i2=0;i2<pos.length;i2++) {
+              if (ignore.has(i2)) continue;
+              for (const s of samples) minD = Math.min(minD, Math.hypot(s.x-pos[i2].x, s.y-pos[i2].y));
+              minD = Math.min(minD, Math.hypot(lp.x-pos[i2].x, lp.y-pos[i2].y));
+            }
+            const score = (minD < 40 ? minD - 1000 : minD) - bend*4;
+            if (score > bestScore) { bestScore=score; best={arc,cpt,lm:lp,bend,bias}; }
+          }
+        }
+        const darc = best.arc;
+        out += drawEdge(ed, shortenQuad(d.mid,{x:darc.cpx,y:darc.cpy},tp,0,32), {stroke:`rgba(255,143,177,${activeDiff?1:.72})`, sw:activeDiff?3:2.4, dash:'7 6', marker:'mDiff'});
+        if (c.text) {
+          const hi=Math.max(d.a,d.b), lo=Math.min(d.a,d.b);
+          let lx=best.lm.x, ly=best.lm.y;
+          if (Math.hypot(lx-tp.x,ly-tp.y) < 42) {
+            const mx=(d.mid.x+tp.x)/2, my=(d.mid.y+tp.y)/2, ox=darc.cpx-mx, oy=darc.cpy-my, ol=Math.hypot(ox,oy)||1;
+            lx=best.lm.x + ox/ol*14; ly=best.lm.y + oy/ol*14;
+          }
+          addLabel(lx, ly, `${fmt(hi,c.base)}-${fmt(lo,c.base)}=${fmt(d.diff,c.base)}`, '#ffd6e2', 12, `data-edge="${ed.id}" class="edge-label"`);
+        }
+      }
+    });
+  }
+
+  // nodes
+  pos.forEach((p, i) => {
+    const inSyz = syz.some(([a,b])=>a===i||b===i);
+    const active = state.active===i;
+    out += `<g class="node" data-i="${i}" style="cursor:pointer">`;
+    out += `<circle cx="${p.x}" cy="${p.y}" r="34" fill="${active?'#264a66':(inSyz?'#24354f':'#1a2638')}" stroke="${active?'#ffffff':(inSyz?'#ffcc66':'#89a3c2')}" stroke-width="${active?3.5:2.4}"/>`;
+    out += `<text x="${p.x}" y="${p.y+2}" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#f3f8ff">${fmt(i,c.base)}</text>`;
+    out += `</g>`;
+  });
+
+  const pad = 70;
+  $('svg').setAttribute('viewBox', `${-pad} ${-pad} ${W + pad*2} ${H + pad*2}`);
+  // resolve label overlaps (skip for large graphs)
+  if (labelItems.length <= 400) {
+    for (let pass=0; pass<12; pass++) {
+      for (let i=0;i<labelItems.length;i++) {
+        for (let j=i+1;j<labelItems.length;j++) {
+          const a=labelItems[i], b=labelItems[j];
+          const wa=a.text.length*a.size*0.62+10, ha=a.size+8;
+          const wb=b.text.length*b.size*0.62+10, hb=b.size+8;
+          const dx=b.x-a.x, dy=(b.y-b.size/2)-(a.y-a.size/2);
+          const ox=(wa+wb)/2 - Math.abs(dx), oy=(ha+hb)/2 - Math.abs(dy);
+          if (ox>0 && oy>0) {
+            if (ox < oy) { const s=dx>=0?1:-1; a.x-=s*ox/2; b.x+=s*ox/2; }
+            else { const s=dy>=0?1:-1; a.y-=s*oy/2; b.y+=s*oy/2; }
+          }
+        }
+      }
+    }
+  }
+  out += labelItems.map(l=>svgLabel(l.x,l.y,l.text,l.fill,{size:l.size,attrs:l.attrs})).join('');
+  out += `</g>`;
+  $('svg').innerHTML = out;
+  $('svg').querySelectorAll('[data-i]').forEach(g => {
+    g.addEventListener('click', () => { if (state.justDragged) return; state.active = +g.dataset.i; render(); updateDetails(); });
+  });
+
+  updateTable();
+  updateDetails();
+}
+
+function updateDetails() {
+  const c = cfg();
+  const i = state.active;
+  const syz = pairs(c.n);
+  if (i == null) { $('triInfo').textContent='Наведи/нажми на зону'; $('diffInfo').textContent='Наведи/нажми на зону'; return; }
+  const k = i;
+  const T = tri(k);
+  const steps = reduceSteps(T);
+  const dr = steps[steps.length-1];
+  const target = dr % c.n;
+  $('triInfo').innerHTML = `<span class="mono">T${k}=${T}</span><br><span class="mono">${steps.join(' → ')}</span><br>поток: <span class="mono">${fmt(i,c.base)} → ${fmt(target,c.base)}</span>`;
+  const pair = syz.find(([a,b])=>a===i||b===i);
+  if (pair) {
+    const [a,b]=pair; const other=a===i?b:a; const diff=Math.abs(a-b); const dt=diff%c.n;
+    $('diffInfo').innerHTML = `<span class="mono">${fmt(a,c.base)}↔${fmt(b,c.base)}</span><br>разность: <span class="mono">${diff}</span><br>стрелка: <span class="mono">→ ${fmt(dt,c.base)}</span>`;
+  } else {
+    $('diffInfo').textContent = 'Нет пары (центральная зона)';
+  }
+}
+
+function demonAt(k) {
+  const i = Math.floor((1 + Math.sqrt(1 + 8 * k)) / 2);
+  const j = k - i * (i - 1) / 2;
+  return [i, j];
+}
+
+function updateTable() {
+  const c = cfg();
+  const total = c.n * (c.n - 1) / 2;
+  const pageSize = 100;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  state.demonPage = Math.min(state.demonPage, pages - 1);
+  const start = state.demonPage * pageSize;
+  const end = Math.min(total, start + pageSize);
+  const rows = [];
+  for (let k = start; k < end; k++) {
+    const [i, j] = demonAt(k);
+    rows.push(`<tr>
+      <td class="mono">${String(k).padStart(2,'0')}</td>
+      <td class="mono">${fmt(i,c.base)}::${fmt(j,c.base)}</td>
+    </tr>`);
+  }
+  $('tbody').innerHTML = rows.join('');
+  const pager = $('pager');
+  if (pages > 1) {
+    pager.innerHTML = `<button id="dPrev" ${state.demonPage===0?'disabled':''}>←</button><span>${state.demonPage+1} / ${pages} (${total})</span><button id="dNext" ${state.demonPage>=pages-1?'disabled':''}>→</button>`;
+    $('dPrev').onclick = () => { if (state.demonPage>0) { state.demonPage--; updateTable(); } };
+    $('dNext').onclick = () => { if (state.demonPage<pages-1) { state.demonPage++; updateTable(); } };
+  } else {
+    pager.innerHTML = `<button disabled>←</button><span>${total} демонов</span><button disabled>→</button>`;
+  }
+}
+
+['n','base','showSyzygy','showTri','showDiff','showDemons','showText'].forEach(id => $(id).addEventListener('input', () => { state.active=null; state.demonPage=0; render(); }));
+
+function applyViewport() {
+  const vp = document.getElementById('vp');
+  if (vp) vp.setAttribute('transform', `translate(${state.panX} ${state.panY}) scale(${state.zoom})`);
+}
+
+$('svg').addEventListener('wheel', e => {
+  e.preventDefault();
+  const svg = $('svg');
+  const rect = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  const mx = (e.clientX - rect.left) / rect.width * vb.width;
+  const my = (e.clientY - rect.top) / rect.height * vb.height;
+  const old = state.zoom;
+  const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+  const next = Math.min(8, Math.max(0.25, old * factor));
+  state.panX = mx - (mx - state.panX) * (next / old);
+  state.panY = my - (my - state.panY) * (next / old);
+  state.zoom = next;
+  applyViewport();
+}, { passive: false });
+
+const svgDrag = $('svg');
+svgDrag.style.cursor = 'grab';
+svgDrag.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  state.dragging = true;
+  state.dragMoved = false;
+  state.justDragged = false;
+  state.dragStartX = e.clientX;
+  state.dragStartY = e.clientY;
+  state.panStartX = state.panX;
+  state.panStartY = state.panY;
+});
+window.addEventListener('mousemove', e => {
+  if (!state.dragging) return;
+  const svg = $('svg');
+  const rect = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  const dx = (e.clientX - state.dragStartX) / rect.width * vb.width;
+  const dy = (e.clientY - state.dragStartY) / rect.height * vb.height;
+  if (!state.dragMoved && Math.hypot(dx, dy) > 3) state.dragMoved = true;
+  if (state.dragMoved) {
+    state.panX = state.panStartX + dx;
+    state.panY = state.panStartY + dy;
+    svg.style.cursor = 'grabbing';
+    applyViewport();
+  }
+});
+window.addEventListener('mouseup', () => {
+  if (!state.dragging) return;
+  state.dragging = false;
+  if (state.dragMoved) {
+    state.justDragged = true;
+    setTimeout(() => { state.justDragged = false; }, 0);
+  }
+  $('svg').style.cursor = 'grab';
+});
+
+function clearHl() {
+  document.querySelectorAll('.edge.hl,.edge-label.hl,.node-hl').forEach(el => el.classList.remove('hl','node-hl'));
+}
+$('svg').addEventListener('pointerover', e => {
+  const el = e.target.closest('[data-edge]');
+  clearHl();
+  if (!el) return;
+  const id = el.dataset.edge;
+  const nodes = (el.dataset.nodes||'').split(',').filter(Boolean);
+  document.querySelectorAll(`[data-edge="${id}"]`).forEach(x => x.classList.add('hl'));
+  nodes.forEach(n => { const g = $('svg').querySelector(`g.node[data-i="${n}"]`); if (g) g.classList.add('node-hl'); });
+});
+$('svg').addEventListener('pointerleave', clearHl);
+
+render();
+</script>
+</body>
+</html>
